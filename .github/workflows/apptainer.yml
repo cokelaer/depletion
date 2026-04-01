@@ -16,7 +16,7 @@ jobs:
     strategy:
       max-parallel: 5
       matrix:
-        python: [3.8, 3.9, '3.10']
+        python: ['3.10']
       fail-fast: false
 
 
@@ -53,6 +53,6 @@ jobs:
 
     - name: testing
       run: |
-        sequana_depletion --mode selection --input-directory test/data/ --reference-file test/data/measles.fa --use-apptainer && cd depletion && sh depletion.sh
+        sequana_depletion --mode selection --input-directory test/data/ --reference-file test/data/measles.fa --apptainer-prefix ~/images && cd depletion && sh depletion.sh
 
 
