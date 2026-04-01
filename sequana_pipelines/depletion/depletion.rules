@@ -22,8 +22,25 @@ configfile: "config.yaml"
 manager = sm.PipelineManager("depletion", config)
 
 
+def get_samtools_filter_options():
+    """Return samtools view filter flags for the requested mode and library type."""
+    options = {
+        "selection": {
+            "paired": "-f2 -F 256",   # keep reads mapped in proper pair
+            "single": "-F4",           # keep mapped reads
+        },
+        "depletion": {
+            "paired": "-f12 -F 256",  # keep reads where both read and mate are unmapped
+            "single": "-f4",           # keep unmapped reads
+        },
+    }
+    mode = config["general"]["mode"]
+    layout = "paired" if manager.paired else "single"
+    return options[mode][layout]
 
-def get_final_outputs():
+
+
+def get_all_final_outputs():
     expected_output = expand("cleaned/{sample}_R1_.fastq.gz", sample=manager.samples)
     if manager.paired:
         expected_output += expand("cleaned/{sample}_R2_.fastq.gz", sample=manager.samples)
@@ -32,7 +49,7 @@ def get_final_outputs():
 
 rule pipeline:
     input:
-        get_final_outputs()
+        get_all_final_outputs()
 
 
 rule bwa_index:
@@ -115,9 +132,8 @@ rule depletion_selection:
         fastq=get_depletion_selection_outputs(),
         both_mapped=temp("{sample}/mapping/{sample}_both_mapped.bam")
     params:
-        ref    = config["general"]["reference"],
-        paired = manager.paired,
-        mode   = config["general"]["mode"]
+        samtools_options=get_samtools_filter_options(),
+        paired=manager.paired,
     log:
         "{sample}/mapping/{sample}.log"
     container:
@@ -127,12 +143,7 @@ rule depletion_selection:
         echo "=== Input BAM ===" >{log}
         samtools flagstat {input} >>{log} 2>&1
 
-        if test {params.mode} == "selection"
-        then
-            samtools view -b -f2 -F 256 {input} 1> {output.both_mapped} 2>>{log}
-        else
-            samtools view -b -f 12 -F 256 {input} 1> {output.both_mapped} 2>>{log}
-        fi
+        samtools view -b {params.samtools_options} {input} 1> {output.both_mapped} 2>>{log}
 
         echo "=== Kept BAM ===" >>{log}
         samtools flagstat {output.both_mapped} >>{log} 2>&1
