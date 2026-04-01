@@ -6,11 +6,13 @@ channels:
   - defaults
 
 dependencies:
+  - python>=3.10
   - bwa
+  - sambamba
   - samtools>=1.15
   - pigz
+  - graphviz
   - pip
   - pip:
     - sequana
-
-
+    - sequana_pipetools

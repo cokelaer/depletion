@@ -12,6 +12,9 @@ mapping:
     "input_pattern":
         type: str
         required: False
+    "exclude_pattern":
+        type: str
+        required: False
 
     "general":
         type: map
@@ -27,6 +30,18 @@ mapping:
     "apptainers":
         type: any
 
+    "bwa_index":
+        type: map
+        mapping:
+            "index_algorithm":
+                type: str
+                required: False
+            "resources":
+                type: map
+                mapping:
+                    "mem":
+                        type: str
+
     "bwa":
         type: map
         mapping:
@@ -36,20 +51,11 @@ mapping:
             "options":
                 type: str
                 required: False
+            "tmp_directory":
+                type: str
+                required: False
             "resources":
                 type: map
                 mapping:
                     "mem":
                         type: str
-
-
-    "bwa_index":
-        type: map
-        mapping:
-            "resources":
-                type: map
-                mapping:
-                    "mem":
-                        type: str
- 
-

@@ -1,3 +1,5 @@
 bwa
+sambamba
 samtools
 pigz
+graphviz

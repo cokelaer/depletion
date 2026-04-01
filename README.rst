@@ -84,16 +84,16 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
-0.4.0     * add HTML summary report with per-sample selection/depletion
-            statistics (total reads, kept reads, %) and output file links
-          * add log directives and ``>{log} 2>&1`` to ``sam2bam`` and
-            ``compression`` rules
-          * add ``samtools flagstat`` in ``depletion_selection`` shell to
-            capture read counts for the report
-          * rename ``rule all`` to ``rule pipeline``
-          * remove unused imports (click_completion, shutil, subprocess)
-          * CI: update to Python 3.10/3.11/3.12, actions/checkout@v4
-          * fix CI coverage module name (was pointing to rnaseq)
+0.4.0     * add HTML summary report with per-sample statistics (total reads,
+            selected/depleted reads and percentage)
+          * fix samtools flags for all mode/layout combinations
+            (selection+paired, selection+single, depletion+paired,
+            depletion+single)
+          * fix single-end crash in depletion_selection shell
+          * migrate bwa rules to manager.get_shell(); remove sam2bam rule
+          * output files moved to per-sample SAMPLE/cleaned/ directories
+          * add rulegraph rule; workflow SVG embedded in report
+          * update tools.txt
 0.3.0     * use click and new sequana_pipetools. convert to pyproject
 0.2.0     * handle paired/unpaired data
           * refactorise to use containers/apptainers
