@@ -30,7 +30,7 @@ def get_final_outputs():
     return expected_output
 
 
-rule all:
+rule pipeline:
     input:
         get_final_outputs()
 
@@ -84,11 +84,13 @@ rule sam2bam:
         "{sample}/mapping/{sample}.sam"
     output:
         temp("{sample}/mapping/{sample}.bam")
+    log:
+        "{sample}/mapping/sam2bam.log"
     container:
         config['apptainers']['samtools']
     shell:
         """
-        samtools view -bS {input} > {output}
+        samtools view -bS {input} > {output} 2>{log}
         """
 
 
@@ -122,13 +124,18 @@ rule depletion_selection:
         config['apptainers']['samtools']
     shell:
         """
-        # uses -f2 to keep only read mapped in proper paired
+        echo "=== Input BAM ===" >{log}
+        samtools flagstat {input} >>{log} 2>&1
+
         if test {params.mode} == "selection"
         then
-            samtools view -b -f2 -F 256 {input} 1> {output.both_mapped} 2>{log}
+            samtools view -b -f2 -F 256 {input} 1> {output.both_mapped} 2>>{log}
         else
-            samtools view -b -f 12 -F 256 {input} 1> {output.both_mapped} 2>{log}
+            samtools view -b -f 12 -F 256 {input} 1> {output.both_mapped} 2>>{log}
         fi
+
+        echo "=== Kept BAM ===" >>{log}
+        samtools flagstat {output.both_mapped} >>{log} 2>&1
 
         if [ {params.paired} == "True" ]
         then
@@ -143,19 +150,104 @@ rule compression:
         fastq=get_depletion_selection_outputs(),
     output:
         get_final_outputs(),
+    log:
+        "{sample}/compression.log"
     container:
         config['apptainers']['pigz']
     shell:
        """
-       pigz {input}
+       pigz {input} >{log} 2>&1
        """
 
 
 onsuccess:
-    shell("chmod -R g+w .")
+    import os
+    import re
+    import pandas as pd
+    from sequana.modules_report.summary import SequanaReport
+    from sequana import logger
+    from sequana.utils.datatables_js import DataTable
+    from sequana_pipelines.depletion import version
+
+    logger.setLevel("INFO")
 
     manager.teardown()
-    print("Once done, please clean up the directory using\n'make clean'")
+
+    def _parse_flagstat_total(text):
+        for line in text.split("\n"):
+            m = re.match(r"(\d+) \+ \d+ in total", line)
+            if m:
+                return int(m.group(1))
+        return 0
+
+    mode = config["general"]["mode"]
+    label = "Selected" if mode == "selection" else "Depleted"
+
+    rows = []
+    for sample in manager.samples:
+        log_file = f"{sample}/mapping/{sample}.log"
+        total_reads = 0
+        kept_reads = 0
+        if os.path.exists(log_file):
+            content = open(log_file).read()
+            parts = content.split("=== Kept BAM ===")
+            if len(parts) == 2:
+                total_reads = _parse_flagstat_total(parts[0])
+                kept_reads = _parse_flagstat_total(parts[1])
+        pct = round(100.0 * kept_reads / total_reads, 1) if total_reads > 0 else 0.0
+        row = {
+            "Sample": sample,
+            "Total reads": total_reads,
+            f"{label} reads": kept_reads,
+            f"{label} (%)": pct,
+            "R1 output": f"cleaned/{sample}_R1_.fastq.gz",
+        }
+        if manager.paired:
+            row["R2 output"] = f"cleaned/{sample}_R2_.fastq.gz"
+        rows.append(row)
+
+    df = pd.DataFrame(rows)
+    datatable = DataTable(df, "depletion_stats", index=False)
+    datatable.datatable.datatable_options = {
+        "paging": "false",
+        "buttons": ["copy", "csv"],
+        "bSort": "true",
+        "dom": "BRSPfrti",
+    }
+    js = datatable.create_javascript_function()
+    htmltable = datatable.create_datatable()
+
+    df_general = pd.DataFrame({
+        "mode": mode,
+        "reference": config["general"]["reference"],
+        "samples": len(manager.samples),
+        "sequana_depletion version": version,
+    }, index=["summary"])
+    datatable2 = DataTable(df_general.T, "general", index=True)
+    datatable2.datatable.datatable_options = {
+        "paging": "false",
+        "bFilter": "false",
+        "bInfo": "false",
+        "header": "false",
+        "bSort": "false",
+    }
+    js2 = datatable2.create_javascript_function()
+    htmltable2 = datatable2.create_datatable(style="width: 30%; float:left")
+
+    contents = """<h2>General information</h2>
+<p>This pipeline selects or depletes reads mapping to a reference genome using BWA and samtools.</p>
+<div style="float:left; width:45%">{js2} {htmltable2}</div>
+<div style="clear:both"></div>
+<hr>
+<h2>Per-sample statistics</h2>
+{js} {htmltable}
+<p>Output FASTQ files are in the <tt>cleaned/</tt> directory.</p>
+""".format(js2=js2, htmltable2=htmltable2, js=js, htmltable=htmltable)
+
+    data = manager.getmetadata()
+    SequanaReport(data, intro=contents)
+
+    shell("chmod -R g+w .")
 
 onerror:
     manager.onerror()
