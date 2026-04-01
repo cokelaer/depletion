@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "sequana-depletion"
-version = "0.3.0"
+version = "0.4.0"
 description = "A pipeline to deplete reads from a given reference"
 authors = ["Sequana Team"]
 license = "BSD-3"
@@ -19,9 +19,9 @@ classifiers = [
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: BSD License",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Topic :: Scientific/Engineering :: Information Analysis",
@@ -33,11 +33,10 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
-sequana = "^0.16.4"
-sequana-pipetools = "^0.16.6"
+python = ">=3.10,<4.0"
+sequana = ">0.16.4"
+sequana-pipetools = "^1.0.0"
 click = "^8.1.7"
-click-completion = "^0.5.2"
 
 
 [tool.poetry.scripts]
