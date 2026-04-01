@@ -62,21 +62,21 @@ This pipelines requires the following executable(s):
 - samtools
 - pigz
 
-#.. image:: https://raw.githubusercontent.com/sequana/depletion/master/sequana_pipelines/depletion/dag.png
+.. image:: https://raw.githubusercontent.com/sequana/depletion/main/sequana_pipelines/depletion/dag.svg
 
 
 Details
 ~~~~~~~~~
 
-This pipeline runs **depletion** in parallel on the input fastq files (paired or not). 
+This pipeline runs **depletion** in parallel on the input fastq files (paired or not).
 A brief sequana summary report is also produced.
 
 
 Rules and configuration details
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here is the `latest documented configuration file <https://raw.githubusercontent.com/sequana/depletion/master/sequana_pipelines/depletion/config.yaml>`_
-to be used with the pipeline. Each rule used in the pipeline may have a section in the configuration file. 
+Here is the `latest documented configuration file <https://raw.githubusercontent.com/sequana/depletion/main/sequana_pipelines/depletion/config.yaml>`_
+to be used with the pipeline. Each rule used in the pipeline may have a section in the configuration file.
 
 Changelog
 ~~~~~~~~~
